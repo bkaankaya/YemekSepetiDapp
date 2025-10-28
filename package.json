@@ -1,0 +1,36 @@
+{
+  "name": "yemeksepetidapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "deploy:subgraph": "node scripts/deploy-subgraph.js",
+    "deploy:local": "node scripts/deploy-local-subgraph.js",
+    "deploy:simple": "node scripts/deploy-simple-local.js",
+    "deploy:sepolia": "hardhat run scripts/deploy-sepolia.js --network sepolia",
+    "start:server": "cd server && npm run dev",
+    "start:frontend": "cd frontend && npm run dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomicfoundation/hardhat-verify": "^2.1.1",
+    "@vitejs/plugin-react": "^5.0.1",
+    "dotenv": "^17.2.1",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.26.2",
+    "vite": "^7.1.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

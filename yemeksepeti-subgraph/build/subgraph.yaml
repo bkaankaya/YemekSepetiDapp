@@ -1,0 +1,102 @@
+specVersion: 0.0.5
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: YemekSepeti
+    network: sepolia
+    source:
+      address: "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3"
+      abi: YemekSepeti
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Order
+        - Restaurant
+        - Customer
+        - MenuItem
+      abis:
+        - name: YemekSepeti
+          file: YemekSepeti\YemekSepeti.json
+      eventHandlers:
+        - event: OrderCreated(indexed uint256,indexed address,indexed address,string)
+          handler: handleOrderCreated
+        - event: OrderConfirmed(indexed uint256)
+          handler: handleOrderConfirmed
+        - event: OrderCancelled(indexed uint256)
+          handler: handleOrderCancelled
+        - event: OrderStatusUpdated(indexed uint256,uint8)
+          handler: handleOrderStatusUpdated
+        - event: DefaultSlippageUpdated(indexed address,uint16)
+          handler: handleDefaultSlippageUpdated
+        - event: ItemSlippageUpdated(indexed address,string,uint16)
+          handler: handleItemSlippageUpdated
+      file: YemekSepeti\YemekSepeti.wasm
+  - kind: ethereum
+    name: Escrow
+    network: sepolia
+    source:
+      address: "0x7969c5eD335650692Bc04293B07F5BF2e7A673C0"
+      abi: Escrow
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Payment
+        - Refund
+      abis:
+        - name: Escrow
+          file: Escrow\Escrow.json
+      eventHandlers:
+        - event: Deposited(indexed uint256,address,address,uint256)
+          handler: handleDeposited
+        - event: Refunded(indexed uint256,address,uint256)
+          handler: handleRefunded
+      file: Escrow\Escrow.wasm
+  - kind: ethereum
+    name: Oracle
+    network: sepolia
+    source:
+      address: "0x7bc06c482DEAd17c0e297aFbC32f6e63d3846650"
+      abi: Oracle
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - PriceUpdate
+      abis:
+        - name: Oracle
+          file: Oracle\Oracle.json
+      eventHandlers:
+        - event: TokenPriceUpdated(indexed address,uint256,uint256,indexed address)
+          handler: handleTokenPriceUpdated
+      file: Oracle\Oracle.wasm
+  - kind: ethereum
+    name: FOOD
+    network: sepolia
+    source:
+      address: "0xc351628EB244ec633d5f21fBD6621e1a683B1181"
+      abi: FOOD
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - TokenTransfer
+        - TokenMint
+        - TokenBurn
+      abis:
+        - name: FOOD
+          file: FOOD\FOOD.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: FOOD\FOOD.wasm

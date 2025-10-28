@@ -1,0 +1,15 @@
+{
+  "name": "yemeksepeti-subgraph",
+  "version": "1.0.0",
+  "description": "YemekSepeti DApp Subgraph",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --product hosted-service yemeksepeti-subgraph",
+    "deploy:local": "graph deploy --node http://localhost:8020 --ipfs http://localhost:5001 yemeksepeti-subgraph"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.82.0",
+    "@graphprotocol/graph-ts": "^0.31.0"
+  }
+}

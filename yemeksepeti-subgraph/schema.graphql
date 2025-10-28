@@ -1,0 +1,99 @@
+type Order @entity(immutable: true) {
+  id: ID!
+  orderId: BigInt!
+  customer: Customer!
+  restaurant: Restaurant!
+  itemName: String!
+  price: BigInt!
+  paymentToken: String!
+  status: String!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+type Restaurant @entity(immutable: true) {
+  id: ID!
+  walletAddress: String!
+  realWorldAddress: String!
+  menuItems: [MenuItem!]! @derivedFrom(field: "restaurant")
+  orders: [Order!]! @derivedFrom(field: "restaurant")
+  defaultSlippageBps: Int!
+  itemSlippages: [ItemSlippage!]! @derivedFrom(field: "restaurant")
+}
+
+type Customer @entity(immutable: true) {
+  id: ID!
+  walletAddress: String!
+  realWorldAddress: String!
+  orders: [Order!]! @derivedFrom(field: "customer")
+}
+
+type MenuItem @entity(immutable: true) {
+  id: ID!
+  name: String!
+  restaurant: Restaurant!
+  priceQuote: BigInt!
+  priceQuoteDecimals: Int!
+  acceptedTokens: [String!]!
+}
+
+type ItemSlippage @entity(immutable: true) {
+  id: ID!
+  restaurant: Restaurant!
+  itemName: String!
+  slippageBps: Int!
+}
+
+type SlippageUpdate @entity(immutable: true) {
+  id: ID!
+  restaurant: String!
+  itemName: String
+  slippageBps: Int!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+type Payment @entity(immutable: true) {
+  id: ID!
+  customer: String!
+  orderId: BigInt!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+type Refund @entity(immutable: true) {
+  id: ID!
+  customer: String!
+  orderId: BigInt!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+type PriceUpdate @entity(immutable: true) {
+  id: ID!
+  itemName: String!
+  oldPrice: BigInt!
+  newPrice: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+type TokenTransfer @entity(immutable: true) {
+  id: ID!
+  from: String!
+  to: String!
+  value: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: String!
+}
+
+

@@ -1,0 +1,70 @@
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: graphnode
+      POSTGRES_PASSWORD: let-me-in
+      POSTGRES_DB: graphnode
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U graphnode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: ipfs
+    restart: unless-stopped
+    ports:
+      - "5001:5001"   # API
+      - "8080:8080"   # Gateway
+      - "4001:4001"   # Swarm
+    volumes:
+      - ipfs_data:/data/ipfs
+      - ipfs_export:/export
+    command: ["daemon", "--migrate=true", "--agent-version-suffix=docker"]
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  graph-node:
+    image: graphprotocol/graph-node:latest
+    container_name: graph-node
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ipfs:
+        condition: service_healthy
+    environment:
+      postgres_host: postgres
+      postgres_user: graphnode
+      postgres_pass: let-me-in
+      postgres_db: graphnode
+
+      ipfs: 'ipfs:5001'
+      ethereum: 'sepolia:https://sepolia.infura.io/v3/744d1f6217cd4bb3a0e00c237db39870'
+      ETHEREUM_JSON_RPC_MAX_PARALLEL_REQUESTS: "8"
+      ETHEREUM_RETRY_TIMES: "10"
+      ETHEREUM_RETRY_DELAY: "500"
+      GRAPH_LOG: info
+    ports:
+      - "8020:8020"   # admin/JSON-RPC
+      - "8000:8000"   # GraphQL
+      - "18000:18000" # metrics
+
+volumes:
+  postgres_data:
+  ipfs_data:
+  ipfs_export:
