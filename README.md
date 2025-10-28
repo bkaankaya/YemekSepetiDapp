@@ -1,78 +1,65 @@
-# 🍕 YemekSepeti DApp
+🍕 YemekSepeti DApp
+A blockchain-based food ordering platform powered by smart contracts on the Sepolia testnet with a GraphQL API.
+Table of Contents
 
-Blockchain tabanlı yemek sipariş platformu - Sepolia testnet'te çalışan akıllı kontratlar ve GraphQL API.
+Features
+Project Structure
+Installation
+GraphQL API
+Smart Contract Addresses
+Subgraph
+Use Cases
+Development
+Testing
+Documentation
+Contributing
+License
+Support
 
-## 🚀 Özellikler
+Features
 
-- **Smart Contracts**: YemekSepeti, Escrow, Oracle ve FOOD Token
-- **GraphQL Subgraph**: Blockchain event'lerini index'leyen The Graph subgraph
-- **GraphQL Server**: Frontend için API sağlayan Apollo Server
-- **Frontend**: React + TypeScript ile modern UI
-- **Real-time Updates**: WebSocket subscription'ları
+Smart Contracts - YemekSepeti, Escrow, Oracle, and FOOD Token contracts
+GraphQL Subgraph - The Graph subgraph for indexing blockchain events
+GraphQL Server - Apollo Server providing API endpoints for the frontend
+Frontend - Modern UI built with React and TypeScript
+Real-time Updates - WebSocket subscriptions for live data
 
-## 🏗️ Proje Yapısı
-
-```
+Project Structure
 YemekSepetiDapp/
-├── contracts/           # Solidity smart contracts
-├── yemeksepeti-subgraph/ # The Graph subgraph
-├── server/              # GraphQL server
-├── frontend/            # React frontend
-└── scripts/             # Deployment ve test scriptleri
-```
-
-## 🔧 Kurulum
-
-### 1. Bağımlılıkları Kur
-```bash
-npm install
+├── contracts/              # Solidity smart contracts
+├── yemeksepeti-subgraph/   # The Graph subgraph
+├── server/                 # GraphQL server
+├── frontend/               # React frontend
+└── scripts/                # Deployment and test scripts
+Installation
+Prerequisites
+Make sure you have Node.js and npm installed on your system.
+Step 1: Install Dependencies
+bashnpm install
 cd frontend && npm install
 cd ../server && npm install
 cd ../yemeksepeti-subgraph && npm install
-```
-
-### 2. Environment Variables
-```bash
-# .env dosyası oluştur
-cp .env.example .env
-# Gerekli değerleri doldur
-```
-
-### 3. Smart Contracts Deploy Et
-```bash
-npx hardhat run scripts/deploy.js --network sepolia
-```
-
-### 4. Subgraph Deploy Et
-```bash
-cd yemeksepeti-subgraph
+Step 2: Configure Environment Variables
+Create a .env file in the root directory:
+bashcp .env.example .env
+Fill in the required values in your .env file.
+Step 3: Deploy Smart Contracts
+bashnpx hardhat run scripts/deploy.js --network sepolia
+Step 4: Deploy Subgraph
+bashcd yemeksepeti-subgraph
 npm run deploy
-```
-
-### 5. GraphQL Server Başlat
-```bash
-cd server
+Step 5: Start GraphQL Server
+bashcd server
 npm run dev
-```
-
-### 6. Frontend Başlat
-```bash
-cd frontend
+Step 6: Start Frontend
+bashcd frontend
 npm run dev
-```
-
-## 📊 GraphQL API
-
-### Endpoint
-```
+GraphQL API
+Endpoint
 http://localhost:4000/graphql
-```
-
-### Örnek Queries
-
-#### Tüm Siparişleri Getir
-```graphql
-query GetOrders {
+Example Queries
+Get All Orders
+graphqlquery GetOrders {
   orders {
     id
     orderId
@@ -83,11 +70,8 @@ query GetOrders {
     createdAt
   }
 }
-```
-
-#### Belirli Siparişi Getir
-```graphql
-query GetOrder($id: ID!) {
+Get Specific Order
+graphqlquery GetOrder($id: ID!) {
   order(id: $id) {
     id
     orderId
@@ -99,11 +83,8 @@ query GetOrder($id: ID!) {
     createdAt
   }
 }
-```
-
-#### Yeni Sipariş Oluştur
-```graphql
-mutation CreateOrder($customer: String!, $restaurant: String!, $itemName: String!) {
+Create New Order
+graphqlmutation CreateOrder($customer: String!, $restaurant: String!, $itemName: String!) {
   createOrder(customer: $customer, restaurant: $restaurant, itemName: $itemName) {
     id
     orderId
@@ -111,109 +92,82 @@ mutation CreateOrder($customer: String!, $restaurant: String!, $itemName: String
     createdAt
   }
 }
-```
+Smart Contract Addresses
+The following smart contracts are deployed on the Sepolia testnet:
+ContractAddressYemekSepeti0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0Escrow0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82Oracle0x0B306BF915C4d645ff596e518fAf3F9669b97016FOOD Token0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE
+Subgraph
+The Graph subgraph indexes the following blockchain events:
 
-## 🔗 Smart Contract Adresleri
+OrderCreated - Triggered when a new order is created
+OrderConfirmed - Triggered when an order is confirmed
+OrderCancelled - Triggered when an order is cancelled
+OrderStatusUpdated - Triggered when order status changes
+DefaultSlippageUpdated - Triggered when restaurant slippage settings are updated
+ItemSlippageUpdated - Triggered when item slippage settings are updated
 
-- **YemekSepeti**: `0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0`
-- **Escrow**: `0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82`
-- **Oracle**: `0x0B306BF915C4d645ff596e518fAf3F9669b97016`
-- **FOOD Token**: `0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE`
+Use Cases
+Restaurant Owner
 
-## 📈 Subgraph
+Add and update menu items
+Configure token acceptance settings
+Approve or reject orders
+Set slippage parameters
 
-The Graph subgraph blockchain event'lerini index'ler:
+Customer
 
-- **OrderCreated**: Yeni sipariş oluşturulduğunda
-- **OrderConfirmed**: Sipariş onaylandığında
-- **OrderCancelled**: Sipariş iptal edildiğinde
-- **OrderStatusUpdated**: Sipariş durumu güncellendiğinde
-- **DefaultSlippageUpdated**: Restoran slippage ayarı güncellendiğinde
-- **ItemSlippageUpdated**: Ürün slippage ayarı güncellendiğinde
+Browse restaurant menus
+Place orders (using ETH or FOOD token)
+Track order status
+Cancel orders
 
-## 🎯 Kullanım Senaryoları
+Admin
 
-### Restoran Sahibi
-- Menü ürünlerini ekle/güncelle
-- Token kabul ayarlarını yap
-- Siparişleri onayla/reddet
-- Slippage ayarlarını yap
+View system-wide metrics
+Monitor restaurant performance
+Track Oracle price updates
 
-### Müşteri
-- Restoran menülerini görüntüle
-- Sipariş ver (ETH veya FOOD token ile)
-- Sipariş durumunu takip et
-- Siparişi iptal et
-
-### Admin
-- Sistem geneli metrikleri görüntüle
-- Restoran performanslarını takip et
-- Oracle fiyat güncellemelerini izle
-
-## 🛠️ Geliştirme
-
-### Subgraph Geliştirme
-```bash
-cd yemeksepeti-subgraph
-npm run codegen    # TypeScript types generate et
-npm run build      # Subgraph build et
-npm run deploy     # Deploy et
-```
-
-### GraphQL Server Geliştirme
-```bash
-cd server
-npm run dev        # Development server başlat
-```
-
-### Frontend Geliştirme
-```bash
-cd frontend
-npm run dev        # Development server başlat
-npm run build      # Production build
-```
-
-## 🔍 Test
-
-### Smart Contract Testleri
-```bash
-npx hardhat test
-```
-
-### Subgraph Testleri
-```bash
-cd yemeksepeti-subgraph
+Development
+Subgraph Development
+bashcd yemeksepeti-subgraph
+npm run codegen    # Generate TypeScript types
+npm run build      # Build the subgraph
+npm run deploy     # Deploy to The Graph
+GraphQL Server Development
+bashcd server
+npm run dev        # Start development server
+Frontend Development
+bashcd frontend
+npm run dev        # Start development server
+npm run build      # Create production build
+Testing
+Smart Contract Tests
+bashnpx hardhat test
+Subgraph Tests
+bashcd yemeksepeti-subgraph
 npm test
-```
+Documentation
+For more detailed information, please refer to the following resources:
 
-## 📚 Dokümantasyon
+The Graph Documentation
+Apollo Server Documentation
+Hardhat Documentation
+Ethers.js Documentation
 
-- [The Graph Documentation](https://thegraph.com/docs/)
-- [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
-- [Hardhat Documentation](https://hardhat.org/docs/)
-- [Ethers.js Documentation](https://docs.ethers.io/)
+Contributing
+We welcome contributions to YemekSepeti DApp! Here's how you can help:
 
-## 🤝 Katkıda Bulunma
+Fork the repository
+Create a feature branch (git checkout -b feature/amazing-feature)
+Commit your changes (git commit -m 'Add amazing feature')
+Push to the branch (git push origin feature/amazing-feature)
+Open a Pull Request
 
-1. Fork yap
-2. Feature branch oluştur (`git checkout -b feature/amazing-feature`)
-3. Commit yap (`git commit -m 'Add amazing feature'`)
-4. Push yap (`git push origin feature/amazing-feature`)
-5. Pull Request oluştur
+Please make sure your code follows the existing style and includes appropriate tests.
+License
+This project is licensed under the MIT License. See the LICENSE file for details.
+Support
+If you encounter any issues or have questions:
 
-## 📄 Lisans
+Open an issue on GitHub Issues
 
-Bu proje MIT lisansı altında lisanslanmıştır.
-
-## 🆘 Destek
-
-Sorun yaşarsanız:
-- GitHub Issues açın
-- Discord kanalımıza katılın
-- Email gönderin
-
----
-
-**🍕 Blockchain ile yemek siparişi artık çok kolay!** 🚀
-
-
+🍕 Ordering food with blockchain has never been easier! 
