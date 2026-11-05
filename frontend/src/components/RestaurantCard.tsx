@@ -2,7 +2,8 @@ import React from 'react';
 import type { Restaurant } from '../types';
 
 const visualFor = (restaurant: Restaurant) => {
-  const term = [restaurant.name, ...(restaurant.categories ?? [])].join(' ').toLocaleLowerCase('tr-TR');
+  // Prefer the restaurant's primary category; secondary categories must not override its cuisine.
+  const term = [restaurant.name, restaurant.categories?.[0] ?? ''].join(' ').toLocaleLowerCase('tr-TR');
   if (/pizza/.test(term)) return {emoji:'🍕', theme:'pizza', label:'Pizza'};
   if (/burger/.test(term)) return {emoji:'🍔', theme:'burger', label:'Burger'};
   if (/kebap|ızgara|izgara/.test(term)) return {emoji:'🍢', theme:'kebap', label:'Kebap'};
