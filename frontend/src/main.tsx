@@ -10,8 +10,6 @@ import { configureChains, createConfig, WagmiConfig, type Chain } from 'wagmi'
 import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ApolloProvider } from '@apollo/client'
-import { apolloClient } from './lib/graphql'
 
 // Hardhat yerel ağı (31337)
 const hardhat: Chain = {
@@ -64,9 +62,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <WagmiConfig config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider chains={chains}>
-          <ApolloProvider client={apolloClient}>
-            <App />
-          </ApolloProvider>
+          <App />
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiConfig>

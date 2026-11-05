@@ -50,3 +50,8 @@
 - The Graph subgraph catalog is read-only and does not need privileged backend keys.
 - Backend role keys are a temporary server-side protection; owner-scoped wallet authorization still needs real cryptographic wallet signature verification before production.
 - Contract deployment addresses differ across historical script outputs. Before a purchase, the client verifies contract bytecode and restaurant registration on the selected chain. Configure and verify the actual deployment addresses for your local node.
+
+## Known locked-package build workaround
+- The current npm lock resolves @apollo/client 3.14.0, whose package references a missing ./globalThis.js when bundled by Vite 4 in CI.
+- No version upgrade was made. The app uses native fetch for its read-only GraphQL queries and no longer imports Apollo runtime modules.
+- Keep package-lock.json untouched. Reconsider removing the now-unused Apollo dependency only in a separate approved maintenance change.

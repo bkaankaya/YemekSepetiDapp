@@ -1,17 +1,6 @@
-import {ApolloClient,InMemoryCache,createHttpLink,from} from '@apollo/client';
-import {onError} from '@apollo/client/link/error';
 
 // Public read-only subgraph, see yemeksepeti-subgraph/schema.graphql.
 export const GRAPHQL_URL=import.meta.env.VITE_SUBGRAPH_URL||'http://localhost:8000/subgraphs/name/yemeksepeti-subgraph';
-const httpLink=createHttpLink({uri:GRAPHQL_URL});
-const errorLink=onError(({graphQLErrors,networkError})=>{
- if(graphQLErrors)graphQLErrors.forEach(error=>console.warn('Subgraph:',error.message));
- if(networkError)console.warn('Subgraph network:',networkError.message);
-});
-export const apolloClient=new ApolloClient({
- link:from([errorLink,httpLink]),cache:new InMemoryCache(),defaultOptions:{watchQuery:{errorPolicy:'all'},query:{errorPolicy:'all'}}
-});
-
 export const GET_RESTAURANTS=`
  query GetRestaurants($first:Int!,$skip:Int!){
    restaurants(first:$first,skip:$skip){
