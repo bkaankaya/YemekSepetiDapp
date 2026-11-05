@@ -10,9 +10,6 @@ export default defineConfig({
       buffer: 'buffer',
     },
   },
-  define: {
-    global: 'globalThis',
-  },
   server: { port: 5173 },
   preview: { port: 5173 },
   optimizeDeps: {

@@ -52,6 +52,6 @@
 - Contract deployment addresses differ across historical script outputs. Before a purchase, the client verifies contract bytecode and restaurant registration on the selected chain. Configure and verify the actual deployment addresses for your local node.
 
 ## Known locked-package build workaround
-- The current npm lock resolves @apollo/client 3.14.0, whose package references a missing ./globalThis.js when bundled by Vite 4 in CI.
-- No version upgrade was made. The app uses native fetch for its read-only GraphQL queries and no longer imports Apollo runtime modules.
+- Root cause of the initial build error: Vite's `define.global = 'globalThis'` text replacement altered import paths containing the substring `global` (e.g. `@safe-global` and Apollo `global.js`). This Vite define was removed, relying on the explicit browser global shim in index.html instead.
+- No version upgrade was made. The public subgraph catalog uses native fetch for its read-only GraphQL queries and no longer needs Apollo runtime imports.
 - Keep package-lock.json untouched. Reconsider removing the now-unused Apollo dependency only in a separate approved maintenance change.
