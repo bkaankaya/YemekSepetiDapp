@@ -1,13 +1,12 @@
-import type { Restaurant, Customer, Order, MenuItem, PriceUpdate } from '../types';
+import type { Restaurant, Customer, Order, PriceUpdate } from '../types';
 
 // Backend API Configuration
-const BACKEND_BASE_URL = 'http://localhost:4000';
-const API_KEY = 'yemeksepeti_secure_api_key_2025';
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+// Public client MUST NOT contain an admin API key. Protected calls require a server-side session.
 
 // API Headers
 const getHeaders = () => ({
   'Content-Type': 'application/json',
-  'X-API-Key': API_KEY,
 });
 
 // Generic API call function

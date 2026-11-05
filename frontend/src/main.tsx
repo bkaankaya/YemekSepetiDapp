@@ -6,7 +6,7 @@ import './index.css'
 import '@rainbow-me/rainbowkit/styles.css'
 import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { configureChains, createConfig, WagmiConfig, type Chain } from 'wagmi'
-import { mainnet, polygon, optimism, arbitrum, base, sepolia } from 'wagmi/chains'
+
 import { publicProvider } from 'wagmi/providers/public'
 import { jsonRpcProvider } from 'wagmi/providers/jsonRpc'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -27,17 +27,14 @@ const hardhat: Chain = {
 }
 
 const { chains, publicClient } = configureChains(
-  [hardhat, sepolia, mainnet, polygon, optimism, arbitrum, base],
+  [hardhat],
   [
     jsonRpcProvider({
       rpc: (chain) => {
         if (chain.id === 31337) {
           return { http: 'http://127.0.0.1:8545' }
         }
-        if (chain.id === 11155111) { // Sepolia
-          return { http: 'https://ethereum-sepolia-rpc.publicnode.com' }
-        }
-        return null
+          return null
       },
     }),
     publicProvider(),
@@ -47,7 +44,7 @@ const { chains, publicClient } = configureChains(
 // Sadece MetaMask ve diğer cüzdanlar, WalletConnect yok
 const { connectors } = getDefaultWallets({
   appName: 'YemekSepeti DApp',
-  projectId: 'YEMEKSEPETI_DAPP_2024_LOCAL', // Geçerli project ID
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YEMEKSEPETI_DAPP_2024_LOCAL', // Replace with your own valid project ID if WalletConnect is enabled
   chains
 })
 

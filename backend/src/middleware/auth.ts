@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { ResponseUtils } from '../utils/response.js';
 import { logger } from '../utils/logger.js';
@@ -27,16 +28,23 @@ export const authenticateApiKey = async (req: Request, res: Response, next: Next
       return;
     }
     
-    // API key validation logic here
-    // For now, we'll accept any non-empty API key
-    if (typeof apiKey === 'string' && apiKey.trim().length > 0) {
-      logger.debug('API key doğrulandı', { ip: req.ip, path: req.path });
-      next();
-    } else {
-      logger.warn('Geçersiz API key', { ip: req.ip, path: req.path });
+    // Fail closed: never accept an arbitrary non-empty token.
+    const expected = process.env.ORACLE_WRITE_API_KEY || process.env.OWNER_API_KEY;
+    if (!expected || expected.length < 32) {
+      res.status(503).json({error:'Oracle write authentication not configured'});
+      return;
+    }
+    if (typeof apiKey !== 'string') {
       ResponseUtils.unauthorized(res, 'Geçersiz API key');
       return;
     }
+    const presentedDigest = createHash('sha256').update(apiKey).digest();
+    const expectedDigest = createHash('sha256').update(expected).digest();
+    if (!timingSafeEqual(presentedDigest, expectedDigest)) {
+      ResponseUtils.unauthorized(res, 'Geçersiz API key');
+      return;
+    }
+    next();
   } catch (error) {
     logger.error('API key authentication hatası', { error: (error as Error).message, ip: req.ip });
     ResponseUtils.error(res, 'Authentication Error', 'API key doğrulama hatası');

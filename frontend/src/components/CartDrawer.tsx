@@ -1,125 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 import { useCart } from '../context/CartContext';
-import CheckoutModal from "./CheckoutModal";
+import CheckoutModal from './CheckoutModal';
 import { ADDRS } from '../lib/addresses';
-import { ethers } from "ethers";
 import { useToast } from './ToastProvider';
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  ethUsdPrice?: number;
-  /** Kontrata kayıtlı restoran cüzdanı (hardhat console'da a1.address) */
-  restaurantAddr: string;
-};
-
-const CartDrawer: React.FC<Props> = ({ open, onClose, ethUsdPrice = 3200, restaurantAddr }) => {
-  const { lines, inc, dec, remove, clear, totalUSD } = useCart();
-  const [checkout, setCheckout] = useState(false);
-  const [isProcessing] = useState(false);
-  const [realEthPrice, setRealEthPrice] = useState<number>(ethUsdPrice);
-  const { showToast } = useToast();
-
-  const hasItems = lines.length > 0;
-  
-  // Oracle'dan gerçek ETH fiyatını al
-  useEffect(() => {
-    const fetchEthPrice = async () => {
-      try {
-        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-        const oracle = new ethers.Contract(ADDRS.ORACLE, [
-          "function currentEthPriceE18() view returns (uint256)"
-        ], provider);
-        
-        const ethPriceE18 = await oracle.currentEthPriceE18();
-        const ethPriceUSD = parseFloat(ethers.utils.formatUnits(ethPriceE18, 18));
-        setRealEthPrice(ethPriceUSD);
-        
-        console.log("🔍 Oracle'dan alınan ETH fiyatı:", ethPriceUSD);
-      } catch (error) {
-        console.log("Oracle'dan ETH fiyatı alınamadı, varsayılan kullanılıyor:", ethUsdPrice);
-        setRealEthPrice(ethUsdPrice);
-      }
-    };
-
-    if (open && hasItems) {
-      fetchEthPrice();
-    }
-  }, [open, hasItems, ethUsdPrice]);
-
-  const totalETH = totalUSD / realEthPrice;
-
-
-  return (
-    <>
-      <aside className={`drawer ${open ? "open" : ""}`}> 
-        <div className="drawer-head">
-          <h3 className="drawer-title">Sepet</h3>
-          <button className="close-btn" onClick={onClose} disabled={isProcessing}>
-            Kapat
-          </button>
-        </div>
-
-        {!hasItems && <div className="empty-cart">
-          <div className="empty-cart-icon">🛒</div>
-          <div>Sepetiniz boş.</div>
+const CartDrawer: React.FC<{open:boolean;onClose:()=>void;restaurantAddr:string|null}> = ({open,onClose,restaurantAddr}) => {
+  const ref=useRef<HTMLDialogElement>(null);
+  const {lines,inc,dec,remove,clear,totalUSD}=useCart();
+  const [checkout,setCheckout]=useState(false);
+  const {showToast}=useToast();
+  const count=lines.reduce((sum,line)=>sum+line.qty,0);
+  useEffect(()=>{const dialog=ref.current;if(!dialog)return;if(open&&!dialog.open)dialog.showModal();if(!open&&dialog.open)dialog.close();},[open]);
+  useEffect(()=>{const dialog=ref.current;if(!dialog)return;dialog.addEventListener('close',onClose);return()=>dialog.removeEventListener('close',onClose);},[onClose]);
+  return <>
+    <dialog ref={ref} className="nx-cart-dialog" aria-labelledby="cart-title" onClick={event=>{if(event.target===ref.current&&!checkout)onClose();}}>
+      <div className="nx-drawer-inner">
+        <div className="nx-drawer-heading"><div><div className="nx-eyebrow nx-orange">SEPETİN</div><h2 id="cart-title">Seçtiklerin <span className="nx-muted-count">({count})</span></h2></div><button className="nx-icon-button" onClick={onClose} aria-label="Sepeti kapat">✕</button></div>
+        <div className="nx-drawer-content">{!lines.length?<div className="nx-cart-empty"><div className="nx-cart-empty-art" aria-hidden="true">🛍️</div><h3>Sepetin şimdilik boş</h3><p>Canının çektiği lezzetleri ekle, burada buluşalım.</p><button className="nx-button nx-button-primary" onClick={onClose}>Yemekleri keşfet</button></div>:
+          <ul className="nx-cart-list">{lines.map(line=><li key={line.restaurantId+':'+line.item.id} className="nx-cart-line">
+            <div className="nx-cart-line-icon" aria-hidden="true">✦</div><div className="nx-cart-line-detail"><h3>{line.item.name}</h3><span>{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(line.item.priceUSD)} / adet</span><div className="nx-quantity-control"><button aria-label={line.item.name+' azalt'} onClick={()=>dec(line.item.id)}>−</button><output aria-live="polite">{line.qty}</output><button aria-label={line.item.name+' artır'} onClick={()=>inc(line.item.id)}>+</button></div></div><div className="nx-cart-line-price"><strong>{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(line.qty*line.item.priceUSD)}</strong><button className="nx-remove-button" onClick={()=>remove(line.item.id)} aria-label={line.item.name+' sepetten çıkar'}>Sil</button></div>
+          </li>)}</ul>}</div>
+        {lines.length>0&&<div className="nx-drawer-footer"><div className="nx-subtotal"><span>Ara toplam</span><strong>{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(totalUSD)}</strong></div><p className="nx-checkout-note">ℹ Nihai kripto tutarı ve ağ ücreti cüzdan onayında doğrulanır.</p>
+          {!restaurantAddr&&<p role="alert" className="nx-checkout-warning">Ödeme kapalı: doğrulanmış on-chain restoran cüzdanı bulunamadı veya demo kataloğu kullanılıyor.</p>}
+          <button className="nx-button nx-button-primary nx-checkout-action" disabled={!restaurantAddr} onClick={()=>setCheckout(true)}>Ödemeye geç <span aria-hidden="true">↗</span></button><button className="nx-clear-button" onClick={()=>{if(window.confirm('Sepetteki tüm ürünleri silmek istiyor musun?'))clear();}}>Sepeti temizle</button>
         </div>}
-
-        {hasItems && (
-          <ul className="cart-list">
-            {lines.map((l) => (
-              <li key={l.item.id} className="cart-line">
-                <div>
-                  <div className="line-name">{l.item.name}</div>
-                  <div className="line-sub">
-                    ${l.item.priceUSD.toFixed(2)} × {l.qty}
-                  </div>
-                </div>
-                <div className="line-actions">
-                  <button className="btn btn-sm btn-outline" onClick={() => dec(l.item.id)} disabled={isProcessing}>-</button>
-                  <span className="qty">{l.qty}</span>
-                  <button className="btn btn-sm btn-outline" onClick={() => inc(l.item.id)} disabled={isProcessing}>+</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => remove(l.item.id)} disabled={isProcessing}>×</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="totals">
-          <div className="totals-summary">
-            Toplam: <strong>${totalUSD.toFixed(2)}</strong> (~{totalETH.toFixed(4)} ETH)
-          </div>
-          <div className="totals-actions">
-            <button className="btn btn-outline" onClick={clear} disabled={!hasItems || isProcessing}>
-              Temizle
-            </button>
-            <button className="btn btn-primary" onClick={() => setCheckout(true)} disabled={!hasItems || isProcessing}>
-              {isProcessing ? "Ödeniyor..." : "Ödemeye Geç"}
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {checkout && (
-        <CheckoutModal
-          restaurantAddress={restaurantAddr as `0x${string}`} // kontrattaki restoran cüzdanı
-          items={lines.map(l => ({ name: l.item.name, qty: l.qty })) as any}
-          totalUSD={totalUSD}
-          approxETH={totalETH}
-          tokenAddress={ADDRS.FOOD as `0x${string}`}
-          tokenSymbol="FOOD"
-          onClose={() => setCheckout(false)}
-          // Modal zaten işlemi gönderiyor; burada sadece UI akışını yönetelim
-          onConfirm={() => setCheckout(false)}
-          onSuccess={() => { 
-            clear(); 
-            showToast("Sipariş oluşturuldu ve ödeme escrow'a yatırıldı.", 'success', 5000);
-          }}
-        />
-      )}
-    </>
-  );
+      </div>
+    </dialog>
+    {checkout&&restaurantAddr&&<CheckoutModal restaurantAddress={restaurantAddr} items={lines.map(line=>({name:line.item.name,qty:line.qty}))} totalUSD={totalUSD} tokenAddress={ADDRS.FOOD} tokenSymbol="FOOD" onClose={()=>setCheckout(false)} onSuccess={hash=>{clear();setCheckout(false);onClose();showToast('Sipariş blockchain üzerinde onaylandı.'+(hash?' Tx: '+hash.slice(0,10)+'…':''),'success',6000);}}/>}
+  </>;
 };
-
 export default CartDrawer;

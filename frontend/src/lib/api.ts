@@ -2,74 +2,45 @@ import { ethers } from "ethers";
 import { YEMEKSEPETI_ADDRESS, ESCROW_ADDRESS } from "./contracts";
 import YemekSepetiArtifact from "../abi/YemekSepeti.abi.json";
 import type { Restaurant } from "../types";
-import { fetchRestaurantsFromBackend } from "./backendApi";
 import { executeQuery, GET_RESTAURANTS } from "./graphql";
 const YemekSepetiAbi = YemekSepetiArtifact.abi;
 
 // ---- Backend API entegrasyonu -------------------------------------------
-export async function fetchRestaurants(): Promise<Restaurant[]> {
-  try {
-    // Önce backend'den veri çekmeye çalış
-    const backendResult = await fetchRestaurantsFromBackend();
-    if (backendResult.data && backendResult.data.length > 0) {
-      return backendResult.data;
-    }
-    
-    // Backend'de veri yoksa GraphQL'den çekmeye çalış
-    const graphqlResult = await executeQuery(GET_RESTAURANTS, { first: 100, skip: 0 });
-    if (graphqlResult?.restaurants && graphqlResult.restaurants.length > 0) {
-      return graphqlResult.restaurants;
-    }
-    
-    // Hiçbir yerden veri gelmezse sample veriyi kullan
-    const { restaurants: SAMPLE_RESTAURANTS } = await import("../data/sample");
-    return SAMPLE_RESTAURANTS;
-  } catch (error) {
-    console.warn('Backend/GraphQL veri çekme hatası, sample veri kullanılıyor:', error);
-    const { restaurants: SAMPLE_RESTAURANTS } = await import("../data/sample");
-    return SAMPLE_RESTAURANTS;
-  }
+/** Public UI: subgraph is read-only; protected backend/admin routes are not a public catalog. */
+export async function fetchRestaurants():Promise<Restaurant[]> {
+  return (await fetchRestaurantCatalog()).restaurants;
+}
+export async function fetchRestaurant(id:string):Promise<Restaurant|null> {
+  const {restaurants}=await fetchRestaurantCatalog();
+  return restaurants.find(restaurant=>restaurant.id===id||restaurant.walletAddress?.toLowerCase()===id.toLowerCase())??null;
 }
 
-/**
- * Belirli bir restoranı ID veya wallet adresine göre getirir
- *  {string} id - Restoran ID'si veya wallet adresi
- *  {Promise<Restaurant | null>} Bulunan restoran veya null
- */
-export async function fetchRestaurant(id: string): Promise<Restaurant | null> {
-  try {
-    // Önce backend'den veri çekmeye çalış
-    const backendResult = await fetchRestaurantsFromBackend(1, 100);
-    if (backendResult.data) {
-      const r = backendResult.data.find(
-        (x: any) => x.id?.toString() === id || x.walletAddress?.toLowerCase?.() === id.toLowerCase?.()
-      );
-      if (r) return r;
+export async function fetchRestaurantCatalog():Promise<{restaurants:Restaurant[];source:'graphql'|'sample'}> {
+  try{
+    type RawMenu={id:string;name:string;priceQuote:string;priceQuoteDecimals:number;acceptedTokens?:string[]};
+    type RawRestaurant={id:string;walletAddress:string;realWorldAddress?:string;menuItems?:RawMenu[]};
+    const payload=await executeQuery<{restaurants?:RawRestaurant[]}>(GET_RESTAURANTS,{first:100,skip:0});
+    if(payload?.restaurants?.length){
+      const restaurants:Restaurant[]=payload.restaurants.filter(row=>ethers.utils.isAddress(row.walletAddress)).map(row=>({
+        id:String(row.id),
+        name:'Restoran '+row.walletAddress.slice(0,6)+'…'+row.walletAddress.slice(-4),
+        walletAddress:row.walletAddress,
+        address:row.realWorldAddress,
+        categories:[],
+        menu:(row.menuItems??[]).map(item=>{
+          const decimals=Number(item.priceQuoteDecimals)||18,price=Number(item.priceQuote);
+          return {
+            id:String(item.id),
+            name:item.name,
+            priceUSD:Number.isFinite(price)&&Number.isInteger(decimals)&&decimals>=0&&decimals<=18?price/10**decimals:0,
+          };
+        }).filter(item=>item.name&&Number.isFinite(item.priceUSD)&&item.priceUSD>0&&item.priceUSD<100000)
+      }));
+      if(restaurants.length)return {restaurants,source:'graphql'};
     }
-    
-    // Backend'de bulunamazsa GraphQL'den çekmeye çalış
-    const graphqlResult = await executeQuery(GET_RESTAURANTS, { first: 100, skip: 0 });
-    if (graphqlResult?.restaurants) {
-      const r = graphqlResult.restaurants.find(
-        (x: any) => x.id?.toString() === id || x.walletAddress?.toLowerCase?.() === id.toLowerCase?.()
-      );
-      if (r) return r;
-    }
-    
-    // Hiçbir yerden bulunamazsa sample veriden ara
-    const { restaurants: SAMPLE_RESTAURANTS } = await import("../data/sample");
-    const r = SAMPLE_RESTAURANTS.find(
-      (x: any) => x.id?.toString() === id || x.walletAddress?.toLowerCase?.() === id.toLowerCase?.()
-    ) || null;
-    return r;
-  } catch (error) {
-    console.warn('Backend/GraphQL restoran arama hatası, sample veri kullanılıyor:', error);
-    const { restaurants: SAMPLE_RESTAURANTS } = await import("../data/sample");
-    const r = SAMPLE_RESTAURANTS.find(
-      (x: any) => x.id?.toString() === id || x.walletAddress?.toLowerCase?.() === id.toLowerCase?.()
-    ) || null;
-    return r;
-  }
+  }catch(error){console.warn('Subgraph kullanılamıyor, demo veri gösteriliyor:',error);}
+  const {restaurants}=await import('../data/sample');
+  return {restaurants,source:'sample'};
 }
 
 // ---- On-chain yardımcılar -------------
@@ -194,9 +165,15 @@ export async function checkoutManyToken(
 
   const { total } = await quoteManyToken(restaurant, names, qtys, token);
 
-  // Escrow kontratı için toplam tutara approve
-  const tx1 = await erc20.approve(ESCROW_ADDRESS, total);
-  await tx1.wait();
+  // Avoid unnecessary approvals; only authorize when allowance is insufficient.
+  const signer = getSigner();
+  const owner = await signer.getAddress();
+  const allowance = await erc20.allowance(owner, ESCROW_ADDRESS);
+  if (allowance.lt(total)) {
+    const tx1 = await erc20.approve(ESCROW_ADDRESS, total);
+    const approvalReceipt = await tx1.wait();
+    if (approvalReceipt.status === 0) throw new Error('FOOD token approve failed');
+  }
 
 
 

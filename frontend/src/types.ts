@@ -3,24 +3,25 @@ export type MenuItem = {
   name: string;
   description?: string;
   image?: string;
-  priceUSD: number;      // basit tutuyoruz; kontrata bağlayınca wei/decimals ekleriz
+  priceUSD: number;
   category?: string;
 };
 
 export type Restaurant = {
   id: string;
   name: string;
-  walletAddress?: string; // Blockchain cüzdan adresi
+  walletAddress?: string;
   logo?: string;
   categories?: string[];
-  rating?: number;       // 1–5
-  eta?: string;          // örn: "25-35 dk"
-  address?: string;      // gerçek adres (isteğe bağlı)
+  rating?: number;
+  eta?: string;
+  address?: string; // physical address; never use this for blockchain transfers
   menu: MenuItem[];
 };
 
-export type CartLine = {
-  restaurantId: string;
-  item: MenuItem;
-  qty: number;
-};
+export type CartLine = { restaurantId: string; item: MenuItem; qty: number };
+
+// Shared API response models. Keep in sync with backend fields, not contract ABIs.
+export type Customer = { id: string; walletAddress?: string; name?: string; email?: string; [key: string]: unknown };
+export type Order = { id: string; status?: string; restaurant?: string; customer?: string; [key: string]: unknown };
+export type PriceUpdate = { id?: string; priceUSD?: number; tokenAddress?: string; timestamp?: number; [key: string]: unknown };

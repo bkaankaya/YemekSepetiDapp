@@ -34,15 +34,32 @@ const RestaurantPanel: React.FC = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    checkWallet();
-    // loadOrders'ı checkWallet tamamlandıktan sonra çağır
-    // loadOrders();
+    void checkWallet();
+    const ethereum = window.ethereum;
+    if (!ethereum?.on) return;
+    const refresh = () => { setOrders([]); setWalletAddress(''); setAccessDenied(false); void checkWallet(); };
+    ethereum.on('accountsChanged', refresh);
+    ethereum.on('chainChanged', refresh);
+    return () => {
+      ethereum.removeListener?.('accountsChanged', refresh);
+      ethereum.removeListener?.('chainChanged', refresh);
+    };
   }, []);
 
   const checkWallet = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      setAccessDenied(true);
+      setAccessError('MetaMask bulunamadı. Restoran paneli için cüzdanını bağlamalısın.');
+      return;
+    }
     if (typeof window.ethereum !== 'undefined') {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (!accounts.length) {
+          setAccessDenied(true);
+          setAccessError('Cüzdan bağlı değil. Üst menüden cüzdanını bağla ve paneli yeniden aç.');
+          return;
+        }
         if (accounts.length > 0) {
           const currentAddress = accounts[0];
           setWalletAddress(currentAddress);
@@ -157,8 +174,11 @@ const RestaurantPanel: React.FC = () => {
                 status = 'pending';
             }
             
-            // Ödeme yöntemini belirle (getOrder paymentToken döndürmüyor, varsayılan olarak ETH)
-            const paymentMethod = 'ETH'; // getOrder fonksiyonu paymentToken döndürmüyor
+            // getOrder doesn't expose the token; use the public orders getter.
+            const fullOrder = await yem.orders(orderId);
+            const paymentToken = fullOrder.paymentToken ?? fullOrder[5];
+            const paymentMethod: 'ETH' | 'TOKEN' =
+              String(paymentToken).toLowerCase() === ethers.constants.AddressZero.toLowerCase() ? 'ETH' : 'TOKEN';
             
             // Sipariş item'larını formatla
             const items = orderItems.map((item: any) => item.name);
@@ -179,7 +199,7 @@ const RestaurantPanel: React.FC = () => {
               quantities: quantities,
               totalAmount: totalAmount,
               status: status,
-              timestamp: Date.now(), // Şimdilik şu anki zaman
+              timestamp: 0, // Contract getter has no creation timestamp; do not invent one.
               paymentMethod: paymentMethod
             };
             
@@ -190,9 +210,7 @@ const RestaurantPanel: React.FC = () => {
             console.error('❌ Sipariş yükleme hatası:', error);
             console.error('❌ Hata detayı:', error instanceof Error ? error.message : 'Bilinmeyen hata');
             console.error('❌ Hata stack:', error instanceof Error ? error.stack : 'Stack yok');
-            setOrders([]);
-          } finally {
-            setLoading(false);
+            // Skip only the broken order; keep other successfully fetched entries.
           }
         }
         
@@ -344,6 +362,7 @@ const RestaurantPanel: React.FC = () => {
   };
 
   const formatTime = (timestamp: number) => {
+    if (!timestamp) return 'Zaman bilgisi yok';
     const now = Date.now();
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);
@@ -391,19 +410,8 @@ const RestaurantPanel: React.FC = () => {
     }
   };
 
-  // Siparişleri sıfırla fonksiyonu (test için)
-  const resetOrders = () => {
-    if (confirm('Siparişleri yeniden yüklemek istediğinizden emin misiniz?')) {
-      loadOrdersWithAddress(walletAddress);
-      alert('Siparişler yeniden yüklendi!');
-    }
-  };
-
   // Ana menüye dön fonksiyonu
-  const goToMainMenu = () => {
-    // Ana sayfaya yönlendir
-    window.location.href = '/';
-  };
+  const goToMainMenu = () => { window.location.assign('/'); };
 
   if (accessDenied) {
     return (
@@ -475,14 +483,7 @@ const RestaurantPanel: React.FC = () => {
             <span className="refresh-icon">🔄</span>
             Yenile
           </button>
-          <button 
-            className="reset-btn" 
-            onClick={resetOrders}
-            disabled={loading}
-          >
-            <span className="reset-icon">🔄</span>
-            Siparişleri Sıfırla
-        </button>
+
         </div>
       </div>
 
